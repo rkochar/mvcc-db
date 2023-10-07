@@ -4,7 +4,7 @@ ENV PYTHONDONTWRITEBYTECODE=1
 
 RUN pip3 install kafka-python
 
-COPY database .
-
+COPY database/database.py .
+COPY ./../utils ./utils
 
 CMD ["python3", "-u", "./database.py"]

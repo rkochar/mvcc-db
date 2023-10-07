@@ -1,58 +1,13 @@
-from kafka import KafkaProducer
-from kafka.errors import KafkaError
-import json
-import faker
-from datetime import datetime
-import logging
 import time
+import logging
 
-logging.basicConfig(level=logging.INFO)
-
-
-class Producer:
-
-    def __init__(self):
-        self._init_kafka_producer()
-
-    def _init_kafka_producer(self):
-        self.kafka_host = "kafka-service.kafka:9092" #"kafka-service.kafka.svc.cluster.local:9092"
-        self.kafka_topic = "my-topic"
-        self.producer = KafkaProducer(
-
-            bootstrap_servers=self.kafka_host, value_serializer=lambda v: json.dumps(v).encode(),
-
-        )
-
-    def publish_to_kafka(self, message):
-        try:
-            self.producer.send(self.kafka_topic, message)
-            self.producer.flush()
-
-        except KafkaError as ex:
-
-            logging.error(f"Exception {ex}")
-        else:
-            logging.info(f"Published message {message} into topic {self.kafka_topic}")
-
-    @staticmethod
-    def create_random_email():
-        f = faker.Faker()
-
-        new_contact = dict(
-            username=f.user_name(),
-            first_name=f.first_name(),
-            last_name=f.last_name(),
-            email=f.email(),
-            date_created=str(datetime.utcnow()),
-        )
-
-        return new_contact
+import utils.producer as kafka_producer
 
 
 if __name__ == "__main__":
-    producer = Producer()
+    logging.info("Starting producer")
+    transaction_producer = kafka_producer.ProducerHelper(topic="topic-transaction")
     while True:
-        random_email = producer.create_random_email()
-        producer.publish_to_kafka(random_email)
-
-        time.sleep(5)
+        time.sleep(1)
+        random_transaction = transaction_producer.create_random_transaction()
+        transaction_producer.publish_to_kafka(random_transaction)

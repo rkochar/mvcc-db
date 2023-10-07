@@ -1,32 +1,42 @@
 from kafka import KafkaConsumer
+import time
+
 import logging
-
-
 logging.basicConfig(level=logging.INFO)
 
+import utils.mvcc as mvcc
+import utils.consumer as kafka_consumer
 
-class Consumer:
 
-    def __init__(self):
-        self._init_kafka_consumer()
+def update_mvcc(mvccdb, messages):
+    logging.info(f"Update mvcc {messages}")
+    # for message in messages:
+    #    mvccdb[message.key].append(message.version, message.value)
+    return mvccdb
 
-    def _init_kafka_consumer(self):
-        self.kafka_host = "kafka-service.kafka:9092"
-        self.kafka_topic = "my-topic"
-        self.consumer = KafkaConsumer(
-            "my-topic",
-            group_id="my-group",
-            bootstrap_servers=self.kafka_host,
-        )
 
-    def consume_from_kafka(self):
-        for message in self.consumer:
-            logging.info(message.value)
+def process_transaction(mvccdb, transaction):
+    logging.info(f"Transaction received: {transaction}")
+    return mvccdb
+
+
+def consume_kafka_messages(mvccdb, transaction_consumer, updates_consumer):
+    logging.info("Starting to consume messages")
+    while True:
+        time.sleep(3)
+        messages = updates_consumer.poll(timeout_ms=100)
+        if messages != {}:
+            mvccdb = update_mvcc(mvccdb, messages)
+
+        time.sleep(3)
+        transaction = transaction_consumer.poll(timeout_ms=100, max_records=1)
+        if transaction != {}:
+            mvccdb = process_transaction(mvccdb, transaction)
 
 
 if __name__ == "__main__":
-
-    consumer = Consumer()
-
-    while True:
-        consumer.consume_from_kafka()
+    logging.info("Starting consumer")
+    mvccdb = mvcc.MVCC(items=12).mvcc
+    transaction_consumer = kafka_consumer.ConsumerHelper(topic="topic-transaction", group="group-transaction").consumer
+    updates_consumer = kafka_consumer.ConsumerHelper(topic="topic-update", group="group-update").consumer
+    consume_kafka_messages(mvccdb, transaction_consumer, updates_consumer)
