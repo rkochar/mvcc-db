@@ -27,15 +27,15 @@ class ProducerHelper:
         except KafkaError as ex:
             logging.error(f"Exception {ex}")
         else:
-            logging.info(f"Published message {message} into topic {self.kafka_topic}")
+            logging.info(f"{self.kafka_topic}: Published message: {message}")
 
     @staticmethod
     def create_random_transaction():
         f = faker.Faker()
 
         new_contact = dict(
-            sender=str(f.random_int(min=1, max=ProducerHelper.ACCOUNTS)),
-            receiver=str(f.random_int(min=1, max=ProducerHelper.ACCOUNTS)),
+            sender=str(f.random_int(min=0, max=ProducerHelper.ACCOUNTS - 1)),
+            receiver=str(f.random_int(min=0, max=ProducerHelper.ACCOUNTS - 1)),
             amount=f.random_int(min=1, max=10),
         )
         if new_contact["sender"] == new_contact["receiver"]:
